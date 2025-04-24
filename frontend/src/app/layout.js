@@ -10,10 +10,24 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className=" grid grid-rows-[20px_1px_20px] min-h-screen p-8 pb-2 gap-8 sm:p-4">
-        <Navbar />
-        <main className="p-4">{children}</main>
+      <body className="min-h-screen p-8 pb-2 gap-8 sm:p-4">
+        {/* ตัวหนังสือใหญ่พื้นหลัง */}
+        <div className="absolute inset-0 flex items-center justify-end mt-32 pointer-events-none z-0">
+          <h1
+            className="text-[15vw] font-bold text-white/8 mr-8 select-none 
+              drop-shadow-[0_0_20px_rgba(0,123,255,0.15)] blur-[0.5px]"
+          >
+            Kafka
+          </h1>
+        </div>
+
+        {/* Navbar อยู่บนสุด */}
+        <div className="relative z-50">
+          <Navbar />
+        </div>
+
+        <main className="relative z-10 p-4">{children}</main>
       </body>
     </html>
-  )
+  );
 }
