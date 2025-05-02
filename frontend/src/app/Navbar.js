@@ -12,8 +12,9 @@ export default function Navbar() {
           height={52}
           alt="Kafka Logo"
         />
+        {/* reload ทุกครั้งที่กด */}
         <div className="text-2xl font-bold">
-          <Link href="/ ">Kafka</Link>
+          <Link href="/" onClick={() => window.location.href = '/'}>Kafka</Link>
         </div>
       </div>
 
@@ -22,7 +23,8 @@ export default function Navbar() {
           <div tabIndex={0} role="button" className="btn m-2">Producer</div>
           <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-10 w-52 p-3 shadow-sm z-50">
             <li><Link href="/producermess" className="btn btn-ghost normal-case">Send Message</Link></li>
-            <li><Link href="/producerjson" className="btn btn-ghost normal-case">Send JSON</Link></li>
+            <li><Link href="/shoes" className="btn btn-ghost normal-case">Send Data Shoes</Link></li>
+            <li><Link href="/inventory" className="btn btn-ghost normal-case">Send Data Inventory</Link></li>
           </ul>
         </div>
       </div>

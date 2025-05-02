@@ -1,8 +1,12 @@
 import { Kafka } from 'kafkajs';
 
-export async function POST(req) {
-  const body = await req.json();
-  const { topic } = body;
+export async function GET(req) {
+  const url = new URL(req.url);
+  const topic = url.searchParams.get('topic');
+
+  if (!topic) {
+    return new Response('Topic is required', { status: 400 });
+  }
 
   const kafka = new Kafka({
     clientId: 'nextjs-consumer',
@@ -11,27 +15,37 @@ export async function POST(req) {
 
   const consumer = kafka.consumer({ groupId: 'nextjs-group-' + Math.random() });
 
-  const messages = [];
-
   try {
     await consumer.connect();
     await consumer.subscribe({ topic, fromBeginning: true });
 
-    // ให้ consumer รัน และรอรับ message
-    await consumer.run({
-      eachMessage: async ({ message }) => {
-        const value = message.value.toString();
-        messages.push(value);
-        console.log("✅ Received:", value);
+    // เริ่มการส่งข้อมูลแบบ SSE
+    const stream = new ReadableStream({
+      start(controller) {
+        consumer.run({
+          eachMessage: async ({ message }) => {
+            const value = message.value.toString();
+            console.log("✅ Received:", value);
+
+            // ส่งข้อมูลไปยัง client แบบ SSE
+            controller.enqueue(`data: ${JSON.stringify({ value })}\n\n`);
+          },
+        });
       },
+      cancel() {
+        consumer.disconnect();
+      }
     });
 
-    // รอ 3 วิ ให้ message มา
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
-    await consumer.disconnect();
-
-    return new Response(JSON.stringify({ messages }), { status: 200 });
+    // สร้าง response แบบ SSE
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Transfer-Encoding': 'chunked',
+      },
+    });
   } catch (err) {
     console.error("❌ Consumer Error:", err);
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });

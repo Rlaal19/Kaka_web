@@ -10,10 +10,12 @@
   },
   "dependencies": {
     "daisyui": "^5.0.19",
+    "express": "^5.1.0",
     "kafkajs": "^2.2.4",
     "next": "15.3.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "ws": "^8.18.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
