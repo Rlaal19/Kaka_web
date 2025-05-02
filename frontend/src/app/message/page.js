@@ -15,6 +15,7 @@ export default function Message() {
     const topicFromURL = searchParams.get('topic');
     if (topicFromURL) {
       setTopic(topicFromURL);
+      fetchMessages(topicFromURL);
       startSSE(topicFromURL);
     }
   }, [searchParams]);
@@ -58,6 +59,11 @@ export default function Message() {
     setLoading(false);
   };
 
+  const handleSubscribe = () => {
+    fetchMessages(topic);
+    startSSE(topic);
+  };
+
   return (
     <div className="pt-4 px-4">
       <div className="flex flex-col items-center">
@@ -75,7 +81,9 @@ export default function Message() {
               <span className="loading loading-spinner absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-primary" />
             )}
           </div>
-          <button className="btn btn-primary" onClick={() => fetchMessages()}>Subscribe</button>
+          <button className="btn btn-primary" onClick={handleSubscribe}>
+            Subscribe
+          </button>
         </div>
       </div>
 
@@ -87,7 +95,6 @@ export default function Message() {
             </div>
           </div>
 
-          {/* ✅ Scrollable message container */}
           <div className="space-y-4 max-h-[500px] overflow-y-auto pl-100 pr-2">
             {messages.map((msg, index) => {
               let parsed;
