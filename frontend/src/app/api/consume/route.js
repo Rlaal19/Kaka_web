@@ -19,16 +19,17 @@ export async function GET(req) {
     await consumer.connect();
     await consumer.subscribe({ topic, fromBeginning: true });
 
-    // เริ่มการส่งข้อมูลแบบ SSE
     const stream = new ReadableStream({
       start(controller) {
         consumer.run({
-          eachMessage: async ({ message }) => {
+          eachMessage: async ({ topic, partition, message }) => {
             const value = message.value.toString();
-            console.log("✅ Received:", value);
+            const offset = message.offset;
 
-            // ส่งข้อมูลไปยัง client แบบ SSE
-            controller.enqueue(`data: ${JSON.stringify({ value })}\n\n`);
+            console.log("✅ Received:", { partition, offset, value });
+
+            // ส่ง value + partition + offset ไปยัง client
+            controller.enqueue(`data: ${JSON.stringify({ value, partition, offset })}\n\n`);
           },
         });
       },
@@ -37,7 +38,6 @@ export async function GET(req) {
       }
     });
 
-    // สร้าง response แบบ SSE
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/event-stream',

@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function Message() {
   const [topic, setTopic] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [eventSource, setEventSource] = useState(null);
+  const seenKeysRef = useRef(new Set());
 
   const searchParams = useSearchParams();
 
@@ -28,13 +29,12 @@ export default function Message() {
     const newEventSource = new EventSource(`/api/consume?topic=${newTopic}`);
     newEventSource.onmessage = function (event) {
       const data = JSON.parse(event.data);
+      const key = `${data.partition}-${data.offset}`;
 
-      setMessages((prevMessages) => {
-        if (!prevMessages.includes(data.value)) {
-          return [...prevMessages, data.value];
-        }
-        return prevMessages;
-      });
+      if (!seenKeysRef.current.has(key)) {
+        seenKeysRef.current.add(key);
+        setMessages((prevMessages) => [...prevMessages, data.value]);
+      }
     };
 
     newEventSource.onerror = function (error) {
@@ -59,7 +59,9 @@ export default function Message() {
     setLoading(false);
   };
 
+
   const handleSubscribe = () => {
+    window.location.href = `?topic=${encodeURIComponent(topic)}`;
     fetchMessages(topic);
     startSSE(topic);
   };
