@@ -1,27 +1,29 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 export default function Message() {
   const [topic, setTopic] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [eventSource, setEventSource] = useState(null);
-  const seenKeysRef = useRef(new Set());
 
   const searchParams = useSearchParams();
+
 
   useEffect(() => {
     const topicFromURL = searchParams.get('topic');
     if (topicFromURL) {
       setTopic(topicFromURL);
-      fetchMessages(topicFromURL);
       startSSE(topicFromURL);
     }
   }, [searchParams]);
 
+  useEffect(() => { return () => { if (eventSource) { console.log("Closing SSE connection in cleanup"); eventSource.close(); } }; }, [eventSource]);
   const startSSE = (newTopic) => {
+    console.log("DDDD");
+
     if (eventSource) {
       eventSource.close();
     }
@@ -29,12 +31,8 @@ export default function Message() {
     const newEventSource = new EventSource(`/api/consume?topic=${newTopic}`);
     newEventSource.onmessage = function (event) {
       const data = JSON.parse(event.data);
-      const key = `${data.partition}-${data.offset}`;
-
-      if (!seenKeysRef.current.has(key)) {
-        seenKeysRef.current.add(key);
-        setMessages((prevMessages) => [...prevMessages, data.value]);
-      }
+      console.log("Check =>", data.value);
+      setMessages((prev) => [...prev, { key: data.key ?? null, value: data.value }]);
     };
 
     newEventSource.onerror = function (error) {
@@ -44,26 +42,8 @@ export default function Message() {
     setEventSource(newEventSource);
   };
 
-  const fetchMessages = async (t = topic) => {
-    setLoading(true);
-    const res = await fetch(`/api/consume?topic=${t}`, {
-      method: 'GET',
-    });
-    if (!res.ok) {
-      console.error('Error fetching messages:', res.statusText);
-      setLoading(false);
-      return;
-    }
-    const data = await res.json();
-    setMessages(data.messages || []);
-    setLoading(false);
-  };
-
-
   const handleSubscribe = () => {
     window.location.href = `?topic=${encodeURIComponent(topic)}`;
-    fetchMessages(topic);
-    startSSE(topic);
   };
 
   return (
@@ -97,28 +77,35 @@ export default function Message() {
             </div>
           </div>
 
-          <div className="space-y-4 max-h-[500px] overflow-y-auto pl-100 pr-2">
-            {messages.map((msg, index) => {
-              let parsed;
-              try {
-                parsed = JSON.parse(msg);
-              } catch {
-                parsed = msg;
-              }
+          <div className="flex justify-end mt-10">
 
-              return (
-                <div
-                  key={index}
-                  className="bg-base-200 p-4 rounded-xl shadow-md text-sm font-mono whitespace-pre-wrap break-words"
-                >
-                  {typeof parsed === 'object' ? (
-                    <pre>{JSON.stringify(parsed, null, 2)}</pre>
-                  ) : (
-                    parsed
-                  )}
-                </div>
-              );
-            })}
+
+            <div className="space-y-4 max-h-[500px] overflow-y-auto w-2/3 pr-2">
+              {messages.map((msg, index) => {
+                let parsedValue;
+                try {
+                  parsedValue = JSON.parse(msg.value);
+                } catch {
+                  parsedValue = msg.value;
+                }
+
+                return (
+                  <div
+                    key={index}
+                    className="bg-base-200 p-4 rounded-xl shadow-md text-sm font-mono whitespace-pre-wrap break-words"
+                  >
+                    <div className="text-xs text-gray-500 mb-2">
+                      <strong>Key:</strong> {msg.key ?? 'null'}
+                    </div>
+                    {typeof parsedValue === 'object' ? (
+                      <pre>{JSON.stringify(parsedValue, null, 2)}</pre>
+                    ) : (
+                      parsedValue
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

@@ -20,22 +20,34 @@ export async function GET(req) {
     await consumer.subscribe({ topic, fromBeginning: true });
 
     const stream = new ReadableStream({
-      start(controller) {
-        consumer.run({
+      async start(controller) {
+        await consumer.run({
+          // ✅ ปิด autoCommit เพื่อควบคุมเอง
+          autoCommit: false,
           eachMessage: async ({ topic, partition, message }) => {
             const value = message.value.toString();
             const offset = message.offset;
+            const key = message.key ? message.key.toString() : null;
 
-            console.log("✅ Received:", { partition, offset, value });
+            console.log("✅ Received:", { partition, offset, key, value });
 
-            // ส่ง value + partition + offset ไปยัง client
-            controller.enqueue(`data: ${JSON.stringify({ value, partition, offset })}\n\n`);
+            // ✅ ส่ง message ไปยัง client
+            controller.enqueue(`data: ${JSON.stringify({ key, value })}\n\n`);
+
+            // ✅ ทำ manual commit เฉพาะเมื่อส่ง client เสร็จ
+            await consumer.commitOffsets([
+              {
+                topic,
+                partition,
+                offset: (parseInt(offset) + 1).toString(), // +1
+              },
+            ]);
           },
         });
       },
       cancel() {
         consumer.disconnect();
-      }
+      },
     });
 
     return new Response(stream, {
