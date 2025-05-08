@@ -32,7 +32,7 @@ export async function GET(req) {
             console.log("✅ Received:", { partition, offset, key, value });
 
             // ✅ ส่ง message ไปยัง client
-            controller.enqueue(`data: ${JSON.stringify({ key, value })}\n\n`);
+            controller.enqueue(`data: ${JSON.stringify({ partition, offset, key, value })}\n\n`);
 
             // ✅ ทำ manual commit เฉพาะเมื่อส่ง client เสร็จ
             await consumer.commitOffsets([

@@ -25,7 +25,7 @@ export default function Home() {
             <div className="justify-end card-actions">
               <button
                 className="btn btn-primary"
-                onClick={() => router.push(`/message?topic=${topic}`)}
+                onClick={() => (window.location.href = `/message?topic=${topic}`)}
               >
                 Subscribe
               </button>

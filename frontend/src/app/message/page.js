@@ -20,7 +20,6 @@ export default function Message() {
     }
   }, [searchParams]);
 
-  useEffect(() => { return () => { if (eventSource) { console.log("Closing SSE connection in cleanup"); eventSource.close(); } }; }, [eventSource]);
   const startSSE = (newTopic) => {
     console.log("DDDD");
 
@@ -32,7 +31,7 @@ export default function Message() {
     newEventSource.onmessage = function (event) {
       const data = JSON.parse(event.data);
       console.log("Check =>", data.value);
-      setMessages((prev) => [...prev, { key: data.key ?? null, value: data.value }]);
+      setMessages((prev) => [...prev, { key: data.key ?? null, value: data.value, partition: data.partition, offset: data.offset }]);
     };
 
     newEventSource.onerror = function (error) {
@@ -95,7 +94,7 @@ export default function Message() {
                     className="bg-base-200 p-4 rounded-xl shadow-md text-sm font-mono whitespace-pre-wrap break-words"
                   >
                     <div className="text-xs text-gray-500 mb-2">
-                      <strong>Key:</strong> {msg.key ?? 'null'}
+                      <strong>Partition:</strong> {msg.partition} | <strong>Offset:</strong> {msg.offset} | <strong>Key:</strong> {msg.key ?? 'null'} 
                     </div>
                     {typeof parsedValue === 'object' ? (
                       <pre>{JSON.stringify(parsedValue, null, 2)}</pre>
